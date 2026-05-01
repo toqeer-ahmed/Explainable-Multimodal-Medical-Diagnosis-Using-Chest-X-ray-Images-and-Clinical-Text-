@@ -55,7 +55,7 @@ class MultimodalDataset(Dataset):
         text = str(self.data_frame.iloc[idx, 1])
         
         # Tokenize text
-        encoding = self.tokenizer.encode_plus(
+        encoding = self.tokenizer(
             text,
             add_special_tokens=True,
             max_length=self.max_len,
