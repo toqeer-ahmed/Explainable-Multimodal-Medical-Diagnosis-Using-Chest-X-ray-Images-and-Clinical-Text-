@@ -1,0 +1,29 @@
+# Python/Environments
+venv/
+env/
+__pycache__/
+*.pyc
+
+# Data
+data/images/*
+data/reports/*
+data/processed/*
+!data/images/.gitkeep
+!data/reports/.gitkeep
+!data/processed/.gitkeep
+
+# Outputs
+outputs/models/*
+outputs/logs/*
+outputs/predictions/*
+outputs/heatmaps/*
+!outputs/models/.gitkeep
+!outputs/logs/.gitkeep
+!outputs/predictions/.gitkeep
+!outputs/heatmaps/.gitkeep
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+.DS_Store
