@@ -42,7 +42,7 @@ def generate_gradcam(model, image_tensor, input_ids, attention_mask, original_im
     model.eval()
     
     # Wrap model to only take image as input
-    wrapper_model = ImageGradCamWrapper(model, input_ids, attention_mask).to(device)
+    wrapper_model = ImageGradCamWrapper(model, input_ids.to(device), attention_mask.to(device)).to(device)
     wrapper_model.eval()
     
     # Target layer for DenseNet121
