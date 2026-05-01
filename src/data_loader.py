@@ -43,6 +43,8 @@ class MultimodalDataset(Dataset):
 
         # 1. Load Image
         img_path = self.data_frame.iloc[idx, 0]
+        # Fix backslashes from Windows for Linux (Colab) compatibility
+        img_path = img_path.replace('\\', '/')
         # Open image and convert to RGB (some X-rays are grayscale)
         image = Image.open(img_path).convert('RGB')
         
