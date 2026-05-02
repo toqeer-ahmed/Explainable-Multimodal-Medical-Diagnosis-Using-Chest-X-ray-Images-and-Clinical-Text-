@@ -10,6 +10,27 @@ import numpy as np
 
 from src.data_loader import get_data_loaders
 from src.fusion_model import MultimodalFusion
+import torch.nn.functional as F
+
+# --- UPGRADE: Focal Loss to handle Extreme Imbalance ---
+class FocalLoss(nn.Module):
+    def __init__(self, alpha=0.25, gamma=2.0, reduction='mean'):
+        super(FocalLoss, self).__init__()
+        self.alpha = alpha
+        self.gamma = gamma
+        self.reduction = reduction
+
+    def forward(self, inputs, targets):
+        bce_loss = F.binary_cross_entropy_with_logits(inputs, targets, reduction='none')
+        pt = torch.exp(-bce_loss)  
+        focal_loss = self.alpha * (1 - pt) ** self.gamma * bce_loss
+
+        if self.reduction == 'mean':
+            return focal_loss.mean()
+        elif self.reduction == 'sum':
+            return focal_loss.sum()
+        else:
+            return focal_loss
 
 def train_epoch(model, loader, criterion, optimizer, device):
     model.train()
@@ -100,9 +121,12 @@ def main(csv_path, epochs=10, batch_size=32, lr=1e-4):
     model = model.to(device)
     
     # 3. Setup Loss and Optimizer
-    # BCEWithLogitsLoss is best for multi-label classification
-    criterion = nn.BCEWithLogitsLoss()
+    # --- UPGRADE: Using Focal Loss instead of standard BCE ---
+    criterion = FocalLoss(alpha=0.25, gamma=2.0)
     optimizer = optim.AdamW(model.parameters(), lr=lr)
+    
+    # --- UPGRADE: Learning Rate Scheduler ---
+    scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs)
     
     # 4. Training Loop
     best_f1 = 0.0
@@ -114,6 +138,9 @@ def main(csv_path, epochs=10, batch_size=32, lr=1e-4):
         
         train_loss = train_epoch(model, train_loader, criterion, optimizer, device)
         val_loss, val_f1, val_auc = eval_epoch(model, val_loader, criterion, device)
+        
+        # Step the scheduler
+        scheduler.step()
         
         print(f"Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f}")
         print(f"Val F1-Score: {val_f1:.4f} | Val ROC-AUC: {val_auc:.4f}")

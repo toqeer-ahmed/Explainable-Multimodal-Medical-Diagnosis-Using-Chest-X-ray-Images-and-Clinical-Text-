@@ -11,16 +11,21 @@ class MultimodalFusion(nn.Module):
         self.image_encoder = ImageEncoder()
         self.text_encoder = TextEncoder(freeze_bert=freeze_bert)
         
-        # Calculate combined feature dimension
-        self.combined_dim = self.image_encoder.feature_dim + self.text_encoder.feature_dim
+        # --- UPGRADE: Cross-Modal Attention Fusion ---
+        # Image is 1280 (EfficientNet-B0), Text is 768 (ClinicalBERT)
+        self.hidden_dim = 512
+        
+        # Project both to same dimension
+        self.v_proj = nn.Linear(self.image_encoder.feature_dim, self.hidden_dim)
+        self.t_proj = nn.Linear(self.text_encoder.feature_dim, self.hidden_dim)
+        
+        # Multi-Head Attention (Text attends to Image)
+        self.attention = nn.MultiheadAttention(embed_dim=self.hidden_dim, num_heads=8, batch_first=True)
         
         # Fusion Layers (Fully Connected)
+        # Input size is hidden_dim after residual combination
         self.classifier = nn.Sequential(
-            nn.Linear(self.combined_dim, 512),
-            nn.BatchNorm1d(512),
-            nn.ReLU(),
-            nn.Dropout(0.3),
-            nn.Linear(512, 256),
+            nn.Linear(self.hidden_dim, 256),
             nn.BatchNorm1d(256),
             nn.ReLU(),
             nn.Dropout(0.3),
@@ -28,16 +33,21 @@ class MultimodalFusion(nn.Module):
         )
 
     def forward(self, images, input_ids, attention_mask):
-        # 1. Extract image features
-        img_features = self.image_encoder(images)  # (batch_size, 1024)
-        
-        # 2. Extract text features
+        # 1. Extract features
+        img_features = self.image_encoder(images)  # (batch_size, 1280)
         text_features = self.text_encoder(input_ids, attention_mask)  # (batch_size, 768)
         
-        # 3. Concatenate modalities
-        fused_features = torch.cat((img_features, text_features), dim=1)  # (batch_size, 1792)
+        # 2. Project to shared hidden dimension
+        v = self.v_proj(img_features).unsqueeze(1) # (batch_size, 1, hidden_dim)
+        t = self.t_proj(text_features).unsqueeze(1)  # (batch_size, 1, hidden_dim)
         
-        # 4. Final Classification (Outputs raw logits, Sigmoid is applied in Loss function)
+        # 3. Cross-Modal Attention (Text query, Image key/value)
+        attn_out, _ = self.attention(query=t, key=v, value=v)
+        
+        # 4. Residual Connection
+        fused_features = (attn_out + t).squeeze(1) # (batch_size, hidden_dim)
+        
+        # 5. Final Classification
         logits = self.classifier(fused_features)  # (batch_size, num_classes)
         
         return logits

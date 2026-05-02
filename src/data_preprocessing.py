@@ -80,6 +80,24 @@ def create_dataset():
         
     df = pd.DataFrame(dataset_records)
     
+    # --- UPGRADE: Hierarchical Class Filtering (Top 15 Classes) ---
+    print("Filtering classes to Top 15 most frequent diseases to solve zero-prediction collapse...")
+    from collections import Counter
+    all_labels = [label for labels in df['labels'] for label in labels]
+    label_counts = Counter(all_labels)
+    
+    top_15_classes = [label for label, count in label_counts.most_common(15)]
+    print(f"Top 15 Classes: {top_15_classes}")
+    
+    def filter_top_classes(labels):
+        filtered = [l for l in labels if l in top_15_classes]
+        # If nothing left, default to normal if it's in top 15, else drop it
+        return filtered if filtered else ["normal"] if "normal" in top_15_classes else []
+        
+    df['labels'] = df['labels'].apply(filter_top_classes)
+    df = df[df['labels'].map(len) > 0] # Remove any records that became empty
+    # --------------------------------------------------------------
+    
     # Multi-label Binarization for the labels
     print("Binarizing labels...")
     mlb = MultiLabelBinarizer()

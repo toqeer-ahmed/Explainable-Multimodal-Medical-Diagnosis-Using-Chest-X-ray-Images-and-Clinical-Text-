@@ -3,7 +3,7 @@ import torch.nn as nn
 from transformers import BertModel
 
 class TextEncoder(nn.Module):
-    def __init__(self, model_name='bert-base-uncased', freeze_bert=False):
+    def __init__(self, model_name='emilyalsentzer/Bio_ClinicalBERT', freeze_bert=False):
         super(TextEncoder, self).__init__()
         # Use eager attention to allow output_attentions=True for explainability
         self.bert = BertModel.from_pretrained(model_name, attn_implementation="eager")
