@@ -7,7 +7,7 @@ from torchvision import transforms
 from transformers import BertTokenizer
 
 class MultimodalDataset(Dataset):
-    def __init__(self, csv_file, tokenizer_name='bert-base-uncased', max_len=128, transform=None):
+    def __init__(self, csv_file, tokenizer_name='emilyalsentzer/Bio_ClinicalBERT', max_len=128, transform=None):
         """
         Args:
             csv_file (string): Path to the processed dataset.csv file.
