@@ -132,6 +132,9 @@ def main(csv_path, epochs=10, batch_size=32, lr=1e-4):
     best_f1 = 0.0
     os.makedirs(os.path.join("outputs", "models"), exist_ok=True)
     
+    # List to store history for plotting
+    history = []
+    
     print("Starting training...")
     for epoch in range(epochs):
         print(f"\nEpoch {epoch+1}/{epochs}")
@@ -145,11 +148,25 @@ def main(csv_path, epochs=10, batch_size=32, lr=1e-4):
         print(f"Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f}")
         print(f"Val F1-Score: {val_f1:.4f} | Val ROC-AUC: {val_auc:.4f}")
         
+        # Save history
+        history.append({
+            'epoch': epoch + 1,
+            'train_loss': train_loss,
+            'val_loss': val_loss,
+            'val_f1': val_f1,
+            'val_auc': val_auc
+        })
+        
         # Save best model
         if val_f1 > best_f1:
             best_f1 = val_f1
             torch.save(model.state_dict(), os.path.join("outputs", "models", "best_model.pth"))
             print("--> Saved new best model!")
+            
+    # Save training history to CSV
+    import pandas as pd
+    pd.DataFrame(history).to_csv(os.path.join("outputs", "training_history.csv"), index=False)
+    print("--> Training history saved to outputs/training_history.csv")
 
 if __name__ == "__main__":
     import argparse
