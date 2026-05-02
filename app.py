@@ -27,10 +27,10 @@ try:
     
     model = MultimodalFusion(num_classes=num_classes).to(device)
     try:
-        model.load_state_dict(torch.load('outputs/models/best_model.pth', map_location=device))
+        model.load_state_dict(torch.load('outputs/models/best_model_V2.pth', map_location=device))
         print("✅ Trained model loaded successfully and ready for predictions!")
     except Exception as e:
-        print(f"⚠️ Warning: Could not find 'outputs/models/best_model.pth'. Using UNTRAINED weights to demonstrate the pipeline! ({e})")
+        print(f"⚠️ Warning: Could not find 'outputs/models/best_model_V2.pth'. Using UNTRAINED weights to demonstrate the pipeline! ({e})")
         
     model.eval()
     
@@ -50,7 +50,7 @@ except Exception as e:
 @app.route('/predict', methods=['POST'])
 def predict():
     if model is None:
-        return jsonify({'error': 'Model not loaded. Ensure best_model.pth is in outputs/models/'}), 500
+        return jsonify({'error': 'Model not loaded. Ensure best_model_V2.pth is in outputs/models/'}), 500
 
     if 'image' not in request.files:
         return jsonify({'error': 'No image provided'}), 400
