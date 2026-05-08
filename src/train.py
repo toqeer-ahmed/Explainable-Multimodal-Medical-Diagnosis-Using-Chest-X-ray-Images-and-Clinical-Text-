@@ -165,8 +165,41 @@ def main(csv_path, epochs=10, batch_size=32, lr=1e-4):
             
     # Save training history to CSV
     import pandas as pd
-    pd.DataFrame(history).to_csv(os.path.join("outputs", "training_history.csv"), index=False)
+    history_df = pd.DataFrame(history)
+    history_df.to_csv(os.path.join("outputs", "training_history.csv"), index=False)
     print("--> Training history saved to outputs/training_history.csv")
+    
+    # Plot and save training history
+    import matplotlib.pyplot as plt
+    
+    plt.figure(figsize=(12, 5))
+    
+    # Plot Losses
+    plt.subplot(1, 2, 1)
+    plt.plot(history_df['epoch'], history_df['train_loss'], label='Train Loss', marker='o')
+    plt.plot(history_df['epoch'], history_df['val_loss'], label='Val Loss', marker='s')
+    plt.title('Training and Validation Loss')
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.legend()
+    plt.grid(True)
+    
+    # Plot Metrics
+    plt.subplot(1, 2, 2)
+    plt.plot(history_df['epoch'], history_df['val_f1'], label='Val F1-Score (Macro)', marker='o', color='green')
+    plt.plot(history_df['epoch'], history_df['val_auc'], label='Val ROC-AUC', marker='s', color='orange')
+    plt.title('Validation Metrics')
+    plt.xlabel('Epochs')
+    plt.ylabel('Score')
+    plt.legend()
+    plt.grid(True)
+    
+    plt.tight_layout()
+    plots_path = os.path.join("outputs", "training_plots.png")
+    plt.savefig(plots_path)
+    plt.close()
+    print(f"--> Training plots saved to {plots_path}")
+
 
 if __name__ == "__main__":
     import argparse
