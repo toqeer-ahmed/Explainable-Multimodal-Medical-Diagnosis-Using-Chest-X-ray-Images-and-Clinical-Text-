@@ -160,7 +160,7 @@ def main(csv_path, epochs=10, batch_size=32, lr=1e-4):
         # Save best model
         if val_f1 > best_f1:
             best_f1 = val_f1
-            torch.save(model.state_dict(), os.path.join("outputs", "models", "best_model.pth"))
+            torch.save(model.state_dict(), os.path.join("outputs", "models", "best_model_V2.pth"))
             print("--> Saved new best model!")
             
     # Save training history to CSV
