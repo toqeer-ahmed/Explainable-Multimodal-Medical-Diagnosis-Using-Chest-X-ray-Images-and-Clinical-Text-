@@ -87,7 +87,7 @@ if __name__ == "__main__":
     # 1. Load labels
     labels_csv_path = 'data/processed/labels.csv'
     dataset_csv_path = 'data/processed/dataset.csv'
-    model_path = 'outputs/models/best_model.pth'
+    model_path = 'outputs/models/best_model_V2.pth'
     
     df_labels = pd.read_csv(labels_csv_path)
     classes = df_labels['class_name'].tolist()
@@ -104,10 +104,32 @@ if __name__ == "__main__":
     # 4. Evaluate
     y_pred, y_true = evaluate_model(model, val_loader, device, num_classes)
     
-    # Calculate overall Micro F1-Score (Threshold = 0.5)
+    # Calculate metrics (Threshold = 0.5)
+    from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
     y_pred_binary = (y_pred >= 0.5).astype(int)
-    f1_micro = f1_score(y_true, y_pred_binary, average='micro')
-    print(f"\nFinal Micro F1-Score: {f1_micro:.4f}")
+    
+    accuracy = accuracy_score(y_true, y_pred_binary)
+    precision_micro = precision_score(y_true, y_pred_binary, average='micro', zero_division=0)
+    recall_micro = recall_score(y_true, y_pred_binary, average='micro', zero_division=0)
+    f1_micro = f1_score(y_true, y_pred_binary, average='micro', zero_division=0)
+    
+    precision_macro = precision_score(y_true, y_pred_binary, average='macro', zero_division=0)
+    recall_macro = recall_score(y_true, y_pred_binary, average='macro', zero_division=0)
+    f1_macro = f1_score(y_true, y_pred_binary, average='macro', zero_division=0)
+    
+    print("\n" + "="*40)
+    print("FINAL EVALUATION METRICS (Validation Set)")
+    print("="*40)
+    print(f"Exact Match Accuracy: {accuracy:.4f}")
+    print("\n--- Micro-Averaged (Overall Performance) ---")
+    print(f"Micro Precision: {precision_micro:.4f}")
+    print(f"Micro Recall:    {recall_micro:.4f}")
+    print(f"Micro F1-Score:  {f1_micro:.4f}")
+    print("\n--- Macro-Averaged (Class-Level Performance) ---")
+    print(f"Macro Precision: {precision_macro:.4f}")
+    print(f"Macro Recall:    {recall_macro:.4f}")
+    print(f"Macro F1-Score:  {f1_macro:.4f}")
+    print("="*40 + "\n")
     
     # 5. Plot Results
     plot_roc_curves(y_true, y_pred, classes, top_k=10)
