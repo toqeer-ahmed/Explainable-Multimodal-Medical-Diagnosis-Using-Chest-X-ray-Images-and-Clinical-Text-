@@ -38,7 +38,9 @@ export function UploadCard({ onSubmit, isLoading }: UploadCardProps) {
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 transition-all">
-      <h2 className="text-xl font-semibold text-slate-800 mb-6">Patient Data Input</h2>
+      <h2 className="text-xl font-semibold text-slate-800 mb-6 flex items-center gap-2">
+        Patient Data Input
+      </h2>
       
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Image Upload Area */}
@@ -63,7 +65,7 @@ export function UploadCard({ onSubmit, isLoading }: UploadCardProps) {
               onChange={handleFileChange}
             />
             {file ? (
-              <div className="flex flex-col items-center gap-2">
+              <div className="flex flex-col items-center gap-2 relative z-10">
                 <FileImage className="w-10 h-10 text-green-500" />
                 <span className="text-sm font-medium text-slate-700">{file.name}</span>
                 <button
@@ -75,7 +77,7 @@ export function UploadCard({ onSubmit, isLoading }: UploadCardProps) {
                 </button>
               </div>
             ) : (
-              <div className="flex flex-col items-center gap-3">
+              <div className="flex flex-col items-center gap-3 relative z-10">
                 <div className="bg-blue-100 p-3 rounded-full">
                   <UploadCloud className="w-6 h-6 text-blue-600" />
                 </div>
@@ -90,10 +92,47 @@ export function UploadCard({ onSubmit, isLoading }: UploadCardProps) {
 
         {/* Text Area */}
         <div className="space-y-2">
-          <label className="text-sm font-medium text-slate-700">Clinical Report (Optional)</label>
+          <div className="flex justify-between items-center">
+            <label className="text-sm font-medium text-slate-700">Clinical Report</label>
+            <div className="relative">
+              <input
+                type="file"
+                accept=".txt,.pdf,.docx"
+                className="hidden"
+                id="doc-upload"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  
+                  const formData = new FormData();
+                  formData.append('file', file);
+                  
+                  try {
+                    const res = await fetch("http://127.0.0.1:5000/extract_text", {
+                      method: "POST",
+                      body: formData,
+                    });
+                    const data = await res.json();
+                    if (data.text) {
+                      setText(data.text);
+                    } else if (data.error) {
+                      alert("Error extracting text: " + data.error);
+                    }
+                  } catch (err) {
+                    alert("Failed to extract text from document.");
+                  }
+                  e.target.value = '';
+                }}
+              />
+              <label htmlFor="doc-upload" className="cursor-pointer flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700 bg-blue-50 px-3 py-1.5 rounded-full transition-colors border border-blue-100">
+                <UploadCloud className="w-3.5 h-3.5" />
+                Upload PDF/TXT/DOCX
+              </label>
+            </div>
+          </div>
           <textarea
             className="w-full min-h-[120px] p-4 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none text-sm text-slate-700 placeholder:text-slate-400"
-            placeholder="E.g., Heart size is normal. Lungs are clear. No focal consolidation... (Optional)"
+            placeholder="E.g., Heart size is normal. Lungs are clear. No focal consolidation..."
             value={text}
             onChange={(e) => setText(e.target.value)}
           />
