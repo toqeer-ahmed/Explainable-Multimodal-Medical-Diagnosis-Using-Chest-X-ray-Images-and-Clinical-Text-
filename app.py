@@ -28,9 +28,9 @@ try:
     model = MultimodalFusion(num_classes=num_classes).to(device)
     try:
         model.load_state_dict(torch.load('outputs/models/best_model_V2.pth', map_location=device))
-        print("✅ Trained model loaded successfully and ready for predictions!")
+        print("Trained model loaded successfully and ready for predictions!")
     except Exception as e:
-        print(f"⚠️ Warning: Could not find 'outputs/models/best_model_V2.pth'. Using UNTRAINED weights to demonstrate the pipeline! ({e})")
+        print(f"Warning: Could not find 'outputs/models/best_model_V2.pth'. Using UNTRAINED weights to demonstrate the pipeline! ({e})")
         
     model.eval()
     
@@ -44,7 +44,7 @@ try:
                              std=[0.229, 0.224, 0.225])
     ])
 except Exception as e:
-    print(f"❌ Fatal Error initializing system: {e}")
+    print(f"Fatal Error initializing system: {e}")
     model = None
 
 @app.route('/predict', methods=['POST'])
@@ -142,5 +142,40 @@ def predict():
         print(f"Prediction Error: {e}")
         return jsonify({'error': str(e)}), 500
 
+import PyPDF2
+import docx
+
+@app.route('/extract_text', methods=['POST'])
+def extract_text():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file part'}), 400
+        
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
+        
+    filename = file.filename.lower()
+    text = ""
+    
+    try:
+        if filename.endswith('.pdf'):
+            pdf_reader = PyPDF2.PdfReader(file)
+            for page in pdf_reader.pages:
+                extracted = page.extract_text()
+                if extracted:
+                    text += extracted + "\n"
+        elif filename.endswith('.docx'):
+            doc = docx.Document(file)
+            for para in doc.paragraphs:
+                text += para.text + "\n"
+        elif filename.endswith('.txt'):
+            text = file.read().decode('utf-8')
+        else:
+            return jsonify({'error': 'Unsupported file format'}), 400
+            
+        return jsonify({'text': text.strip()})
+    except Exception as e:
+        return jsonify({'error': f'Failed to extract text: {str(e)}'}), 500
+
 if __name__ == '__main__':
-    app.run(port=5000, debug=True)
+    app.run(debug=True, port=5000)
